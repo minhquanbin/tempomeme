@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAccount, useConnect, usePublicClient, useWalletClient } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { useNavigate } from "react-router-dom";
@@ -43,7 +43,29 @@ export default function CreatePage() {
   const [preview, setPreview] = useState("");
   const [mineProgress, setMineProgress] = useState(0);
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const handleImageURL = (url: string) => { set("imageURI", url); setPreview(url); };
+  const handleImageURL = (url: string) => { set("imageURI", url); setPreview(url); };
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
+    const toastId = toast.loading("Uploading image...");
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (!data.secure_url) throw new Error(data?.error?.message ?? "Upload failed");
+      set("imageURI", data.secure_url);
+      setPreview(data.secure_url);
+      toast.success("Image uploaded!", { id: toastId });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed. Try a direct image URL instead.", { id: toastId });
+    }
+  };
 
   const handleCreate = async () => {
     if (!walletClient || !pub) return;
@@ -110,11 +132,30 @@ export default function CreatePage() {
           <div style={{ width: "80px", height: "80px", borderRadius: "12px", border: "2px dashed var(--border)", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-secondary)" }}>
             {preview ? <img src={preview} alt="preview" onError={() => setPreview("")} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Upload size={24} color="var(--text-secondary)" />}
           </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Image URL <span style={{ color: "#ef4444" }}>*</span></label>
-            <input style={inputStyle} placeholder="https://i.imgur.com/..." value={form.imageURI} onChange={e => handleImageURL(e.target.value)} />
-            <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Use Imgur or any direct image URL</p>
-          </div>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Image <span style={{ color: "#ef4444" }}>*</span></label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ width: "100%", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 16px", color: form.imageURI ? "var(--text-primary)" : "var(--text-secondary)", fontSize: "14px", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
+            >
+              {form.imageURI ? "✓ Image ready" : "📁 Upload from device"}
+            </button>
+            <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "6px" }}>Or paste a URL:</p>
+            <input
+              style={{ ...inputStyle, marginTop: "4px", fontSize: "12px", padding: "8px 12px" }}
+              placeholder="https://i.imgur.com/..."
+              value={form.imageURI}
+              onChange={e => handleImageURL(e.target.value)}
+            />
+          </div>
         </div>
         <div>
           <label style={labelStyle}>Token Name <span style={{ color: "#ef4444" }}>*</span></label>

@@ -1,12 +1,5 @@
-import { defineChain } from "viem";
+export { tempoModerato } from "../lib/wagmi";
 
-export const tempoModerato = defineChain({
-  id: 42431,
-  name: "Tempo Moderato",
-  nativeCurrency: { name: "USD", symbol: "USD", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.moderato.tempo.xyz"] } },
-  blockExplorers: { default: { name: "Explorer", url: "https://explore.moderato.tempo.xyz" } },
-});
 
 export const FACTORY_ADDRESS = "0x1478E73C61A0dBD2C8DC45C542137b5cC2E9D142" as const;
 export const PATH_USD = "0x20c0000000000000000000000000000000000000" as const;

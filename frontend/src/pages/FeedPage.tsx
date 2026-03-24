@@ -65,6 +65,11 @@ function TokenCard({ token, onClick }: { token: TokenInfo; onClick: () => void }
   );
 }
 
+// In-memory cache persists across navigations
+let tokenCache: TokenInfo[] = [];
+let cacheTime = 0;
+const CACHE_TTL = 30_000; // 30 seconds
+
 export default function FeedPage() {
   const pub = usePublicClient();
   const navigate = useNavigate();
@@ -74,37 +79,83 @@ export default function FeedPage() {
 
   useEffect(() => { loadTokens(); }, []);
 
-  async function loadTokens() {
-    if (!pub) return;
-    setLoading(true);
-    try {
-      const addrs = await pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "getAllTokens" }) as string[];
-      if (addrs.length === 0) { setLoading(false); return; }
-      const results = await Promise.all(addrs.map(async (addr) => {
-        try {
-          const a = addr as `0x${string}`;
-          const [name, symbol, imageURI, description, creator, saleAddress] = await Promise.all([
-            pub.readContract({ address: a, abi: ERC20_ABI, functionName: "name" }),
-            pub.readContract({ address: a, abi: ERC20_ABI, functionName: "symbol" }),
-            pub.readContract({ address: a, abi: ERC20_ABI, functionName: "imageURI" }),
-            pub.readContract({ address: a, abi: ERC20_ABI, functionName: "description" }),
-            pub.readContract({ address: a, abi: ERC20_ABI, functionName: "creator" }),
-            pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "tokenToSale", args: [a] }),
-          ]);
-          const sa = saleAddress as `0x${string}`;
-          const [price, marketCap, phase, phase1Sold] = await Promise.all([
-            pub.readContract({ address: sa, abi: SALE_ABI, functionName: "getCurrentPrice" }),
-            pub.readContract({ address: sa, abi: SALE_ABI, functionName: "getMarketCap" }),
-            pub.readContract({ address: sa, abi: SALE_ABI, functionName: "currentPhase" }),
-            pub.readContract({ address: sa, abi: SALE_ABI, functionName: "phase1Sold" }),
-          ]);
-          return { address: addr, name, symbol, imageURI, description, creator, saleAddress, price, marketCap, phase, phase1Sold } as TokenInfo;
-        } catch { return null; }
-      }));
-      setTokens(results.filter(Boolean).reverse() as TokenInfo[]);
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  }
+  async function loadTokens() {
+    if (!pub) return;
+    // Show cache immediately, refresh in background
+    const now = Date.now();
+    if (tokenCache.length > 0 && now - cacheTime < CACHE_TTL) return;
+    setLoading(tokenCache.length === 0);
+    try {
+      const addrs = await pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "getAllTokens" }) as `0x${string}`[];
+      if (addrs.length === 0) { setLoading(false); return; }
+
+      // Batch 1: get saleAddress for all tokens in one multicall
+      const saleCalls = addrs.map(a => ({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "tokenToSale", args: [a] } as const));
+      let saleResults: any[];
+      try {
+        saleResults = await pub.multicall({ contracts: saleCalls, allowFailure: false });
+      } catch {
+        saleResults = await Promise.all(saleCalls.map(c => pub.readContract(c).catch(() => null)));
+      }
+      const saleAddrs = saleResults as `0x${string}`[];
+
+      // Batch 2: get all token + sale data in one multicall
+      const calls: any[] = [];
+      addrs.forEach((a, i) => {
+        const sa = saleAddrs[i];
+        calls.push(
+          { address: a, abi: ERC20_ABI, functionName: "name" },
+          { address: a, abi: ERC20_ABI, functionName: "symbol" },
+          { address: a, abi: ERC20_ABI, functionName: "imageURI" },
+          { address: a, abi: ERC20_ABI, functionName: "description" },
+          { address: a, abi: ERC20_ABI, functionName: "creator" },
+          { address: sa, abi: SALE_ABI, functionName: "getCurrentPrice" },
+          { address: sa, abi: SALE_ABI, functionName: "getMarketCap" },
+          { address: sa, abi: SALE_ABI, functionName: "currentPhase" },
+          { address: sa, abi: SALE_ABI, functionName: "phase1Sold" },
+        );
+      });
+      let results: any[];
+      try {
+        results = await pub.multicall({ contracts: calls, allowFailure: true });
+      } catch {
+        // Fallback: throttled sequential
+        results = [];
+        for (let i = 0; i < calls.length; i++) {
+          try { results.push({ status: "success", result: await pub.readContract(calls[i]) }); }
+          catch { results.push({ status: "failure", result: null }); }
+          if (i % 5 === 4) await new Promise(r => setTimeout(r, 500));
+        }
+      }
+
+      const tokens: TokenInfo[] = [];
+      addrs.forEach((addr, i) => {
+        const base = i * 9;
+        const get = (j: number) => results[base + j]?.status === "success" ? results[base + j].result : null;
+        const name = get(0) as string;
+        const symbol = get(1) as string;
+        if (!name || !symbol) return;
+        tokens.push({
+          address: addr,
+          name,
+          symbol,
+          imageURI: (get(2) as string) ?? "",
+          description: (get(3) as string) ?? "",
+          creator: (get(4) as string) ?? "",
+          saleAddress: saleAddrs[i],
+          price: (get(5) as bigint) ?? 0n,
+          marketCap: (get(6) as bigint) ?? 0n,
+          phase: (get(7) as number) ?? 1,
+          phase1Sold: (get(8) as bigint) ?? 0n,
+        } as TokenInfo);
+      });
+      const sorted = tokens.reverse();
+      tokenCache = sorted;
+      cacheTime = Date.now();
+      setTokens(sorted);
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  }
 
   const filtered = tokens.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || t.symbol.toLowerCase().includes(search.toLowerCase()));
 
