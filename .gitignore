@@ -1,0 +1,12 @@
+# env
+.env
+*.local
+
+# OS
+.DS_Store
+
+# logs
+*.log
+
+# optional
+node_modules

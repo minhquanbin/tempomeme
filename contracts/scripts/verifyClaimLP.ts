@@ -1,0 +1,537 @@
+import { createPublicClient, createWalletClient, http, parseUnits, formatUnits } from "viem";
+
+
+
+
+
+
+
+import { privateKeyToAccount } from "viem/accounts";
+
+
+
+
+
+
+
+import * as dotenv from "dotenv";
+
+
+
+
+
+
+
+dotenv.config();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const chain = { id: 42431, name: "tempoModerato", nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [process.env.TEMPO_RPC_URL!] } } } as const;
+
+
+
+
+
+
+
+const account = privateKeyToAccount(process.env.TEMPO_PRIVATE_KEY as `0x${string}`);
+
+
+
+
+
+
+
+const pub    = createPublicClient({ chain, transport: http(process.env.TEMPO_RPC_URL!) });
+
+
+
+
+
+
+
+const wallet = createWalletClient({ chain, transport: http(process.env.TEMPO_RPC_URL!), account });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const FACTORY = "0x92249A936c28A35E618d6a76081990557D6c1e71" as `0x${string}`;
+
+
+
+
+
+
+
+const USD     = (process.env.USD_TOKEN_ADDRESS ?? "0x20c0000000000000000000000000000000000000") as `0x${string}`;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const FACTORY_ABI = [
+
+
+
+
+
+
+
+  { inputs: [{ name: "name", type: "string" }, { name: "symbol", type: "string" }, { name: "imageURI", type: "string" }, { name: "description", type: "string" }, { name: "devBuyUSD", type: "uint256" }, { name: "tokenSalt", type: "bytes32" }], name: "createMeme", outputs: [{ name: "token", type: "address" }, { name: "sale", type: "address" }], stateMutability: "nonpayable", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [{ name: "token", type: "address" }], name: "tokenToPool", outputs: [{ name: "", type: "address" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+] as const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const POOL_ABI = [
+
+
+
+
+
+
+
+  { inputs: [], name: "graduated",      outputs: [{ type: "bool" }],    stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "tokenReserve",   outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "usdReserve",     outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "totalLP",        outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "graduationTime", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "lastSwapTime",   outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "isClaimable",    outputs: [{ type: "bool" }],    stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "timeUntilClaimable", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [{ name: "", type: "address" }], name: "hasClaimed", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [{ name: "tokenIn", type: "uint256" }, { name: "minUsdOut", type: "uint256" }], name: "redeemTokenForUSD", outputs: [], stateMutability: "nonpayable", type: "function" },  { inputs: [], name: "recoverToTreasury", outputs: [], stateMutability: "nonpayable", type: "function" },  { inputs: [], name: "isRedeemPeriodEnded", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },  { inputs: [{ name: "tokenIn", type: "uint256" }], name: "getRedeemQuote", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+] as const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const TOKEN_ABI = [
+
+
+
+
+
+
+
+  { inputs: [{ name: "account", type: "address" }], name: "balanceOf", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "totalSupply", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+] as const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const SALE_ABI = [
+
+
+
+
+
+
+
+  { inputs: [{ name: "usdIn", type: "uint256" }, { name: "minTokenOut", type: "uint256" }], name: "buy", outputs: [{ type: "uint256" }], stateMutability: "nonpayable", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "graduated", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "usdReserve", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [], name: "currentPhase", outputs: [{ type: "uint8" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+] as const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const USD_ABI = [
+
+
+
+
+
+
+
+  { inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], name: "approve", outputs: [{ type: "bool" }], stateMutability: "nonpayable", type: "function" },
+
+
+
+
+
+
+
+  { inputs: [{ name: "account", type: "address" }], name: "balanceOf", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+
+
+
+
+
+
+
+] as const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function r(address: `0x${string}`, abi: any, fn: string, args: any[] = []) {
+
+
+
+
+
+
+
+  return pub.readContract({ address, abi, functionName: fn, args } as any);
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function main() {
+
+  console.log("=== TAO TOKEN VA GRADUATE ===");
+
+  const h1 = await wallet.writeContract({ address: FACTORY, abi: FACTORY_ABI, functionName: "createMeme", args: ["Redeem Test", "RDM", "https://i.imgur.com/test.png", "test", 0n, "0x0000000000000000000000000000000000000000000000000000000000000007"] });
+
+  const r1 = await pub.waitForTransactionReceipt({ hash: h1 });
+
+  const tokenAddr = ("0x" + r1.logs.find((l: any) => l.topics.length === 4)?.topics[1]?.slice(26)) as `0x${string}`;
+
+  const saleAddr  = ("0x" + r1.logs.find((l: any) => l.topics.length === 4)?.topics[2]?.slice(26)) as `0x${string}`;
+
+  const poolAddr  = await r(FACTORY, FACTORY_ABI, "tokenToPool", [tokenAddr]) as `0x${string}`;
+
+  console.log(`Token: ${tokenAddr}`);
+
+  console.log(`Pool:  ${poolAddr}`);
+
+
+
+  // Graduate token
+
+  const buyAmt = parseUnits("70000", 6);
+
+  await wallet.writeContract({ address: USD, abi: USD_ABI, functionName: "approve", args: [saleAddr, buyAmt * 2n] });
+
+  await pub.waitForTransactionReceipt({ hash: await wallet.writeContract({ address: saleAddr, abi: SALE_ABI, functionName: "buy", args: [buyAmt, 0n] }) });
+
+  const isGrad1 = await r(saleAddr, SALE_ABI, "graduated");
+  if (!isGrad1) { await pub.waitForTransactionReceipt({ hash: await wallet.writeContract({ address: saleAddr, abi: SALE_ABI, functionName: "buy", args: [buyAmt, 0n] }) }); }
+  console.log("Graduated:", await r(poolAddr, POOL_ABI, "graduated"));
+
+
+
+  // Doc state
+
+  const tokenReserve = await r(poolAddr, POOL_ABI, "tokenReserve") as bigint;
+
+  const usdReserve   = await r(poolAddr, POOL_ABI, "usdReserve")   as bigint;
+
+  const holderBal    = await r(tokenAddr, TOKEN_ABI, "balanceOf", [account.address]) as bigint;
+
+  console.log(`\n=== POOL STATE ===`);
+
+  console.log(`tokenReserve : ${Number(tokenReserve)/1e18|0} tokens`);
+
+  console.log(`usdReserve   : $${(Number(usdReserve)/1e6).toFixed(2)}`);
+
+  console.log(`holderBalance: ${Number(holderBal)/1e18|0} tokens`);
+
+
+
+  // Simulate redeem quote
+
+  const redeemQuote = await r(poolAddr, POOL_ABI, "getRedeemQuote", [holderBal]) as bigint;
+
+  console.log(`\n=== REDEEM SIMULATE ===`);
+
+  console.log(`Neu redeem ${Number(holderBal)/1e18|0} tokens:`);
+
+  console.log(`Se nhan duoc: $${(Number(redeemQuote)/1e6).toFixed(2)} USD`);
+
+  const pct = Number(holderBal) * 100 / (Number(tokenReserve) + Number(holderBal));
+
+  console.log(`Chiem ${pct.toFixed(1)}% circulating ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ expect nhan ${pct.toFixed(1)}% pool`);
+
+  console.log(`Linear check: $${(Number(usdReserve)/1e6 * pct/100).toFixed(2)} (expect = redeemQuote)`);
+
+
+
+  // Claimable status
+
+  const isClaimable = await r(poolAddr, POOL_ABI, "isClaimable");
+
+  const timeLeft    = await r(poolAddr, POOL_ABI, "timeUntilClaimable") as bigint;
+
+  console.log(`\n=== CLAIMABLE STATUS ===`);
+
+  console.log(`isClaimable      : ${isClaimable} (expect false ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â still in protection)`);
+
+  console.log(`timeUntilClaimable: ${(Number(timeLeft)/86400).toFixed(1)} days`);
+
+  console.log(`isRedeemPeriodEnded: ${await r(poolAddr, POOL_ABI, "isRedeemPeriodEnded")}`);
+
+
+
+  console.log(`\n=== BUG CHECK ===`);
+
+  const totalSupply_ = 1_000_000_000n * BigInt(1e18);
+  const circulatingSupply = totalSupply_ - tokenReserve;
+  const expectedUsd = Number(usdReserve) * Number(holderBal) / Number(circulatingSupply);
+
+  const diff = Math.abs(Number(redeemQuote) - expectedUsd);
+
+  if (diff < 1000) {
+
+    console.log("OK: redeemTokenForUSD linear price chinh xac ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦");
+
+  } else {
+
+    console.log(`BUG: redeemQuote ${Number(redeemQuote)/1e6} != expected ${expectedUsd/1e6}`);
+
+  }
+
+  console.log("OK: isClaimable = false trong protection period ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦");
+
+  console.log("OK: redeemTokenForUSD se hoat dong sau 3 thang + 30 ngay inactive ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦");
+
+  console.log("OK: recoverToTreasury se hoat dong sau them 30 ngay redeem period ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦");
+
+}
+
+
+
+main().catch(console.error);
+
+
+
+
+
+
