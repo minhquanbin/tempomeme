@@ -18,7 +18,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
           <Zap size={22} color="var(--accent)" fill="var(--accent)" />
-          <span style={{ fontWeight: 700, fontSize: "18px", color: "var(--text-primary)" }}>MemeTempo</span>
+          <span style={{ fontWeight: 700, fontSize: "18px", color: "var(--text-primary)" }}>cafe.fun</span>
           <span style={{ fontSize: "11px", color: "var(--accent)", background: "#14532d33", padding: "2px 6px", borderRadius: "4px", fontWeight: 600 }}>TESTNET</span>
         </Link>
 
@@ -29,7 +29,7 @@ export default function Navbar() {
           </Link>
 
           <Link to="/create" style={{ backgroundColor: "var(--accent)", color: "#000", textDecoration: "none", padding: "7px 14px", borderRadius: "6px", fontSize: "14px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
-            <Plus size={15} /> <span>Tạo Token / Create</span>
+            <Plus size={15} /> <span>Launch Token</span>
           </Link>
 
           {isConnected && address ? (
@@ -43,7 +43,7 @@ export default function Navbar() {
             </div>
           ) : (
             <button onClick={() => connect({ connector: injected() })} style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--accent)", color: "var(--accent)", padding: "7px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
-              Kết nối ví / Connect
+              Káº¿t ná»‘i vÃ­ / Connect
             </button>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 
-const FACTORY_ADDRESS = "0xc2DAD5AF5E0746B3d0736283B166eacB48a96924";
+const FACTORY_ADDRESS = "0x1478E73C61A0dBD2C8DC45C542137b5cC2E9D142";
 const TARGET_SUFFIX   = "8888";
 
 // ABI encode constructor args giong Solidity abi.encode

@@ -42,11 +42,11 @@ function TokenCard({ token, onClick }: { token: TokenInfo; onClick: () => void }
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
         <div style={{ background: "var(--bg-secondary)", borderRadius: "8px", padding: "8px" }}>
-          <p style={{ fontSize: "10px", color: "var(--text-secondary)", marginBottom: "2px" }}>Gia / Price</p>
+          <p style={{ fontSize: "10px", color: "var(--text-secondary)", marginBottom: "2px" }}>Price</p>
           <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>${fmtPrice(token.price)}</p>
         </div>
         <div style={{ background: "var(--bg-secondary)", borderRadius: "8px", padding: "8px" }}>
-          <p style={{ fontSize: "10px", color: "var(--text-secondary)", marginBottom: "2px" }}>Von hoa / Mcap</p>
+          <p style={{ fontSize: "10px", color: "var(--text-secondary)", marginBottom: "2px" }}>Market Cap</p>
           <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--accent)" }}>{fmtMcap(token.marketCap)}</p>
         </div>
       </div>
@@ -115,24 +115,24 @@ export default function FeedPage() {
           <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
             <TrendingUp size={24} color="var(--accent)" /> Meme Tokens
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "4px" }}>Kham pha va trade token meme tren Tempo</p>
+          <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "4px" }}>Discover and trade meme tokens on Tempo</p>
         </div>
         <button onClick={loadTokens} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "8px 14px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
-          <Zap size={14} /> Lam moi / Refresh
+          <Zap size={14} /> Refresh
         </button>
       </div>
-      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tim kiem token... / Search tokens..." style={{ width: "100%", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 16px", color: "var(--text-primary)", fontSize: "14px", marginBottom: "24px", outline: "none" }} />
+      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tokens..." style={{ width: "100%", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 16px", color: "var(--text-primary)", fontSize: "14px", marginBottom: "24px", outline: "none" }} />
       {loading ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-secondary)" }}>
           <Rocket size={40} style={{ margin: "0 auto 16px", opacity: 0.4 }} />
-          <p>Dang tai... / Loading...</p>
+          <p>Loading...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-secondary)" }}>
           <Rocket size={40} style={{ margin: "0 auto 16px", opacity: 0.4 }} />
-          <p style={{ fontSize: "18px", fontWeight: 600, color: "var(--text-primary)" }}>Chua co token nao / No tokens yet</p>
-          <p style={{ marginTop: "8px", fontSize: "14px" }}>Hay la nguoi dau tien tao token!</p>
-          <button onClick={() => navigate("/create")} style={{ marginTop: "20px", background: "var(--accent)", color: "#000", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", fontWeight: 700, fontSize: "14px" }}>Tao ngay / Create now</button>
+          <p style={{ fontSize: "18px", fontWeight: 600, color: "var(--text-primary)" }}>No tokens yet</p>
+          <p style={{ marginTop: "8px", fontSize: "14px" }}>Be the first to launch a token!</p>
+          <button onClick={() => navigate("/create")} style={{ marginTop: "20px", background: "var(--accent)", color: "#000", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", fontWeight: 700, fontSize: "14px" }}>Launch now</button>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>

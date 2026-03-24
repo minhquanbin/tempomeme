@@ -1,5 +1,5 @@
 import { usePublicClient } from "wagmi";
-import { CURVE_ABI } from "../config/contracts";
+import { SALE_ABI } from "../config/contracts";
 import { useState, useEffect } from "react";
 
 // Helper: tinh max USD co the mua truoc khi het CURVE_SUPPLY
@@ -16,8 +16,7 @@ export function useMaxBuy(curveAddr: `0x${string}` | undefined) {
         // Thu mua $68,999 (gan graduation)
         const test = await pub!.readContract({
           address: curveAddr!,
-          abi: CURVE_ABI,
-          functionName: "getBuyAmount",
+          abi: functionName: "getBuyAmount",
           args: [68999n * 1_000_000n],
         });
         setMaxBuy(68999n * 1_000_000n);

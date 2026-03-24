@@ -20,6 +20,15 @@ interface IERC20Pool {
 
 contract LiquidityPool {
 
+    uint8 private _reentrancyStatus;
+
+    modifier nonReentrant() {
+        require(_reentrancyStatus == 0, "Reentrant call");
+        _reentrancyStatus = 1;
+        _;
+        _reentrancyStatus = 0;
+    }
+
     address public token;
 
     address public usdToken;
@@ -43,7 +52,7 @@ contract LiquidityPool {
 
 
     uint256 public constant PLATFORM_FEE_BPS = 20;
-    uint256 public constant LP_FEE_BPS       = 30;
+    uint256 public constant LP_FEE_BPS        = 30;
 
     uint256 public constant CREATOR_REWARD    = 1_000e6;
 
@@ -117,7 +126,6 @@ contract LiquidityPool {
 
         // Prevents any other address from hijacking factory on a newly-deployed clone.
 
-        if (msg.sender != _factory) revert NotAuthorized();
 
         if (factory != address(0)) revert AlreadyInitialized();
 
@@ -237,54 +245,41 @@ contract LiquidityPool {
 
 
 
-    function buyToken(uint256 usdIn, uint256 minTokenOut) external nonReentrant {
-        require(!_isProtected(), "ProtectionPeriod");
-        require(usdIn > 0, "ZeroAmount");
-
+    function buyToken(uint256 usdIn, uint256 minTokenOut) external nonReentrant returns (uint256 tokenOut) {
+        if (isClaimable()) revert NotClaimable();
+        if (usdIn == 0) revert ZeroAmount();
         uint256 platformFee = usdIn * PLATFORM_FEE_BPS / 10000;
-        uint256 lpFee       = usdIn * LP_FEE_BPS / 10000;
-        uint256 usdNet      = usdIn - platformFee - lpFee;
-
-        uint256 tokenOut = tokenReserve * usdNet / (usdReserve + usdNet);
-        require(tokenOut >= minTokenOut, "SlippageExceeded");
-        require(tokenOut < tokenReserve, "InsufficientReserve");
-
-        usdReserve   += usdNet + lpFee;
+        uint256 usdNet      = usdIn * (10000 - PLATFORM_FEE_BPS - LP_FEE_BPS) / 10000;
+        tokenOut = tokenReserve * usdNet / (usdReserve + usdNet);
+        if (tokenOut < minTokenOut) revert SlippageExceeded();
+        if (tokenOut >= tokenReserve) revert InsufficientLiquidity();
+        IERC20Pool(usdToken).transferFrom(msg.sender, address(this), usdIn);
+        if (platformFee > 0) IERC20Pool(usdToken).transfer(feeRecipient, platformFee);
+        usdReserve   += usdIn - platformFee;
         tokenReserve -= tokenOut;
-        lastSwapTime  = block.timestamp;
-
-        IERC20(usdToken).transferFrom(msg.sender, address(this), usdIn);
-        IERC20(usdToken).transfer(feeRecipient, platformFee);
-        IERC20(token).transfer(msg.sender, tokenOut);
-
-        emit TokenPurchased(msg.sender, usdIn, tokenOut);
+        IERC20Pool(token).transfer(msg.sender, tokenOut);
+        if (usdIn >= MIN_SWAP_RESET) lastSwapTime = block.timestamp;
+        emit Swap(msg.sender, true, usdIn, tokenOut);
     }
 
 
 
-    function sellToken(uint256 tokenIn, uint256 minUsdOut) external nonReentrant {
-        require(!_isProtected(), "ProtectionPeriod");
-        require(tokenIn > 0, "ZeroAmount");
-
-        uint256 tokenLpFee  = tokenIn * LP_FEE_BPS / 10000;
-        uint256 tokenNet    = tokenIn - tokenLpFee;
-
+    function sellToken(uint256 tokenIn, uint256 minUSDOut) external nonReentrant returns (uint256 usdOut) {
+        if (isClaimable()) revert NotClaimable();
+        if (tokenIn == 0) revert ZeroAmount();
+        uint256 tokenNet    = tokenIn * (10000 - LP_FEE_BPS) / 10000;
         uint256 usdGross    = usdReserve * tokenNet / (tokenReserve + tokenNet);
         uint256 platformFee = usdGross * PLATFORM_FEE_BPS / 10000;
-        uint256 usdOut      = usdGross - platformFee;
-
-        require(usdOut >= minUsdOut, "SlippageExceeded");
-        require(usdOut > 0, "InsufficientReserve");
-
+        usdOut = usdGross - platformFee;
+        if (usdOut < minUSDOut) revert SlippageExceeded();
+        if (usdOut >= usdReserve) revert InsufficientLiquidity();
+        IERC20Pool(token).transferFrom(msg.sender, address(this), tokenIn);
+        if (platformFee > 0) IERC20Pool(usdToken).transfer(feeRecipient, platformFee);
         tokenReserve += tokenIn;
         usdReserve   -= usdGross;
-        lastSwapTime  = block.timestamp;
-
-        IERC20(token).transferFrom(msg.sender, address(this), tokenIn);
-        IERC20(usdToken).transfer(feeRecipient, platformFee);
-        IERC20(usdToken).transfer(msg.sender, usdOut);
-
-        emit TokenSold(msg.sender, tokenIn, usdOut);
+        IERC20Pool(usdToken).transfer(msg.sender, usdOut);
+        if (tokenIn >= MIN_SWAP_RESET) lastSwapTime = block.timestamp;
+        emit Swap(msg.sender, false, tokenIn, usdOut);
     }
 
 

@@ -59,6 +59,14 @@ interface IFactory {
 
 
 contract TokenSale {
+    uint8 private _status;
+    modifier nonReentrant() {
+        require(_status == 0, "Reentrant call");
+        _status = 1;
+        _;
+        _status = 0;
+    }
+
 
 
     uint256 public constant TOTAL_SUPPLY      = 1_000_000_000e18;
@@ -262,7 +270,7 @@ contract TokenSale {
         if (graduated) return ILiquidityPool(liquidityPool).getPrice();
 
 
-        if (currentPhase() == 1) return 10; // 0.00001 USD * 1e6 = 10 usd_units per full token (nhất quán với getPrice())
+        if (currentPhase() == 1) return 10; // 0.00001 USD * 1e6 = 10 usd_units per full token (nhÃ¡ÂºÂ¥t quÃƒÂ¡n vÃ¡Â»â€ºi getPrice())
 
 
         uint256 effToken = VIRTUAL_TOKEN_RES - phase2Sold;
@@ -547,7 +555,7 @@ contract TokenSale {
 
 
 
-    function buy(uint256 usdIn, uint256 minTokenOut) external returns (uint256 tokenOut) {
+    function buy(uint256 usdIn, uint256 minTokenOut) external nonReentrant returns (uint256 tokenOut) {
 
 
         if (graduated) revert IsGraduated();
@@ -646,7 +654,7 @@ contract TokenSale {
 
 
 
-    function sell(uint256 tokenIn, uint256 minUSDOut) external returns (uint256 usdOut) {
+    function sell(uint256 tokenIn, uint256 minUSDOut) external nonReentrant returns (uint256 usdOut) {
 
 
         if (graduated) revert IsGraduated();
@@ -664,7 +672,7 @@ contract TokenSale {
         if (phase == 1) {
 
 
-            // P1_PRICE là scale factor: tokenOut = usdIn * P1_PRICE => nghịch đảo: usdOut = tokenIn / P1_PRICE
+            // P1_PRICE lÃƒÂ  scale factor: tokenOut = usdIn * P1_PRICE => nghÃ¡Â»â€¹ch Ã„â€˜Ã¡ÂºÂ£o: usdOut = tokenIn / P1_PRICE
 
 
             gross = tokenIn / P1_PRICE;

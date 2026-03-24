@@ -48,7 +48,7 @@ export default function CreatePage() {
   const handleCreate = async () => {
     if (!walletClient || !pub) return;
     if (!form.name || !form.symbol || !form.imageURI) {
-      toast.error("Vui long dien day du / Please fill all fields");
+      toast.error("Please fill all required fields");
       return;
     }
     setLoading(true);
@@ -81,14 +81,14 @@ export default function CreatePage() {
       });
       toast.loading("Dang xac nhan... / Confirming...", { id: toastId });
       const receipt = await pub.waitForTransactionReceipt({ hash });
-      toast.success("Tao token thanh cong! / Token created!", { id: toastId });
+      toast.success("Token launched successfully!", { id: toastId });
       const memeLog = receipt.logs.find(l => l.topics.length === 4);
       if (memeLog?.topics[1]) {
         const tokenAddr = "0x" + memeLog.topics[1].slice(26);
         navigate("/token/" + tokenAddr);
       } else { navigate("/"); }
     } catch (e: any) {
-      toast.error(e?.shortMessage || e?.message || "Loi / Error", { id: toastId });
+      toast.error(e?.shortMessage || e?.message || "Error", { id: toastId });
     }
     setLoading(false);
     setMineProgress(0);
@@ -101,9 +101,9 @@ export default function CreatePage() {
     <div style={{ paddingTop: "40px", paddingBottom: "60px", maxWidth: "560px", margin: "0 auto" }}>
       <div style={{ marginBottom: "28px" }}>
         <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Rocket size={24} color="var(--accent)" /> Tao Meme Token / Create
+          <Rocket size={24} color="var(--accent)" /> Launch Meme Token
         </h1>
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "6px" }}>Deploy token len Tempo Moderato Testnet trong vai giay</p>
+        <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "6px" }}>Deploy your token to Tempo Moderato Testnet in seconds</p>
       </div>
       <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
         <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
@@ -111,32 +111,32 @@ export default function CreatePage() {
             {preview ? <img src={preview} alt="preview" onError={() => setPreview("")} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Upload size={24} color="var(--text-secondary)" />}
           </div>
           <div style={{ flex: 1 }}>
-            <label style={labelStyle}>URL anh / Image URL <span style={{ color: "#ef4444" }}>*</span></label>
+            <label style={labelStyle}>Image URL <span style={{ color: "#ef4444" }}>*</span></label>
             <input style={inputStyle} placeholder="https://i.imgur.com/..." value={form.imageURI} onChange={e => handleImageURL(e.target.value)} />
-            <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Dung Imgur hoac link anh truc tiep / Use Imgur or direct image URL</p>
+            <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Use Imgur or any direct image URL</p>
           </div>
         </div>
         <div>
-          <label style={labelStyle}>Ten token / Token Name <span style={{ color: "#ef4444" }}>*</span></label>
-          <input style={inputStyle} placeholder="vd: Doge on Tempo" value={form.name} onChange={e => set("name", e.target.value)} maxLength={32} />
+          <label style={labelStyle}>Token Name <span style={{ color: "#ef4444" }}>*</span></label>
+          <input style={inputStyle} placeholder="e.g. Doge on Tempo" value={form.name} onChange={e => set("name", e.target.value)} maxLength={32} />
         </div>
         <div>
-          <label style={labelStyle}>Ky hieu / Symbol <span style={{ color: "#ef4444" }}>*</span></label>
-          <input style={inputStyle} placeholder="vd: DOGET" value={form.symbol} onChange={e => set("symbol", e.target.value.toUpperCase())} maxLength={10} />
-          <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Tu dong viet hoa / Auto uppercase</p>
+          <label style={labelStyle}>Symbol <span style={{ color: "#ef4444" }}>*</span></label>
+          <input style={inputStyle} placeholder="e.g. DOGET" value={form.symbol} onChange={e => set("symbol", e.target.value.toUpperCase())} maxLength={10} />
+          <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Auto uppercase</p>
         </div>
         <div>
-          <label style={labelStyle}>Mo ta / Description</label>
-          <textarea style={{ ...inputStyle, minHeight: "80px", resize: "vertical" } as any} placeholder="Mo ta ngan ve token cua ban..." value={form.description} onChange={e => set("description", e.target.value)} maxLength={200} />
+          <label style={labelStyle}>Description</label>
+          <textarea style={{ ...inputStyle, minHeight: "80px", resize: "vertical" } as any} placeholder="Short description of your token..." value={form.description} onChange={e => set("description", e.target.value)} maxLength={200} />
           <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>{form.description.length}/200</p>
         </div>
         <div>
-          <label style={labelStyle}>Dev Buy (optional) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mua truoc Phase 1</label>
+          <label style={labelStyle}>Dev Buy (optional) — buy before Phase 1 opens</label>
           <div style={{ position: "relative" }}>
             <input style={inputStyle} type="number" placeholder="0 (max $500)" max="500" value={form.devBuy} onChange={e => { const v = Number(e.target.value); set("devBuy", v > 500 ? "500" : e.target.value); }} />
             <span style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "var(--text-secondary)", fontWeight: 600 }}>USD</span>
           </div>
-          <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Toi da $500 (50% Phase 1). Mua cung tx voi deploy, chong front-run.</p>
+          <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>Max $500 (50% of Phase 1). Purchased in the same tx as deploy, front-run protected.</p>
         </div>
         {mineProgress > 0 && (
           <div style={{ background: "var(--bg-secondary)", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "var(--text-secondary)" }}>
@@ -146,16 +146,16 @@ export default function CreatePage() {
         <div style={{ background: "#14532d22", border: "1px solid #22c55e33", borderRadius: "10px", padding: "12px 16px", display: "flex", gap: "10px" }}>
           <AlertCircle size={16} color="var(--accent)" style={{ flexShrink: 0, marginTop: "1px" }} />
           <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: "1.6" }}>
-            <p><strong style={{ color: "var(--accent)" }}>Tokenomics:</strong> Tong cung 1,000,000,000 - Phase 1: 10% gia $0.00001 (giam 80%) - Phase 2: AMM tu $0.00005 - Phi 1%</p>
-            <p style={{ marginTop: "4px" }}>Phase 1 day du khi dat $1,000 - Phase 2 gia tang dan theo AMM</p>
-            <p style={{ marginTop: "4px", color: "var(--accent)" }}>ÃƒÂ¢Ã…â€œÃ‚Â¨ Token address se ket thuc bang ...cf</p>
+            <p><strong style={{ color: "var(--accent)" }}>Tokenomics:</strong> Total supply 1,000,000,000 — Phase 1: 10% at $0.00001 — Phase 2: AMM bonding curve — 1% fee</p>
+            <p style={{ marginTop: "4px" }}>Phase 1 fills at $1,000 raised — Phase 2 price increases along the AMM curve</p>
+            <p style={{ marginTop: "4px", color: "var(--accent)" }}>🚀 Token address will end with ...8888</p>
           </div>
         </div>
         {!isConnected ? (
-          <button onClick={() => connect({ connector: injected() })} style={{ width: "100%", background: "var(--accent)", color: "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "15px" }}>Ket noi vi de tiep tuc / Connect Wallet</button>
+          <button onClick={() => connect({ connector: injected() })} style={{ width: "100%", background: "var(--accent)", color: "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "15px" }}>Connect Wallet to continue</button>
         ) : (
           <button onClick={handleCreate} disabled={loading} style={{ width: "100%", background: loading ? "var(--border)" : "var(--accent)", color: loading ? "var(--text-secondary)" : "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: "15px", transition: "all 0.2s" }}>
-            {loading ? "Mining & deploying..." : "Tao Token / Create Token"}
+            {loading ? "Mining & deploying..." : "Launch Token"}
           </button>
         )}
       </div>
