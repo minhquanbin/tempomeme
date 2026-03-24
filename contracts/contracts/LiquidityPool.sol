@@ -42,9 +42,8 @@ contract LiquidityPool {
 
 
 
-    uint256 public constant PLATFORM_FEE_BPS  = 20;
-
-    uint256 public constant TOTAL_FEE_BPS     = 50;
+    uint256 public constant PLATFORM_FEE_BPS = 20;
+    uint256 public constant LP_FEE_BPS       = 30;
 
     uint256 public constant CREATOR_REWARD    = 1_000e6;
 
@@ -238,80 +237,54 @@ contract LiquidityPool {
 
 
 
-    function buyToken(uint256 usdIn, uint256 minTokenOut) external returns (uint256 tokenOut) {
+    function buyToken(uint256 usdIn, uint256 minTokenOut) external nonReentrant {
+        require(!_isProtected(), "ProtectionPeriod");
+        require(usdIn > 0, "ZeroAmount");
 
-        if (isClaimable()) revert NotClaimable();
+        uint256 platformFee = usdIn * PLATFORM_FEE_BPS / 10000;
+        uint256 lpFee       = usdIn * LP_FEE_BPS / 10000;
+        uint256 usdNet      = usdIn - platformFee - lpFee;
 
-        if (usdIn == 0) revert ZeroAmount();
+        uint256 tokenOut = tokenReserve * usdNet / (usdReserve + usdNet);
+        require(tokenOut >= minTokenOut, "SlippageExceeded");
+        require(tokenOut < tokenReserve, "InsufficientReserve");
 
-        uint256 platformFee = usdIn * PLATFORM_FEE_BPS / 10000; // 0.2% -> feeRecipient
-
-        uint256 usdNet      = usdIn * (10000 - TOTAL_FEE_BPS) / 10000; // 99.5% -> AMM price
-
-        tokenOut = tokenReserve * usdNet / (usdReserve + usdNet);
-
-        if (tokenOut < minTokenOut) revert SlippageExceeded();
-
-        if (tokenOut >= tokenReserve) revert InsufficientLiquidity();
-
-        IERC20Pool(usdToken).transferFrom(msg.sender, address(this), usdIn);
-
-        if (platformFee > 0) IERC20Pool(usdToken).transfer(feeRecipient, platformFee);
-
-        // LP fee (0.3%) o lai reserve: tang usdIn - platformFee (khong tru LP fee)
-
-        usdReserve   += usdIn - platformFee;
-
+        usdReserve   += usdNet + lpFee;
         tokenReserve -= tokenOut;
+        lastSwapTime  = block.timestamp;
 
-        IERC20Pool(token).transfer(msg.sender, tokenOut);
+        IERC20(usdToken).transferFrom(msg.sender, address(this), usdIn);
+        IERC20(usdToken).transfer(feeRecipient, platformFee);
+        IERC20(token).transfer(msg.sender, tokenOut);
 
-        if (usdIn >= MIN_SWAP_RESET) lastSwapTime = block.timestamp;
-
-        emit Swap(msg.sender, true, usdIn, tokenOut);
-
+        emit TokenPurchased(msg.sender, usdIn, tokenOut);
     }
 
 
 
-    function sellToken(uint256 tokenIn, uint256 minUSDOut) external returns (uint256 usdOut) {
+    function sellToken(uint256 tokenIn, uint256 minUsdOut) external nonReentrant {
+        require(!_isProtected(), "ProtectionPeriod");
+        require(tokenIn > 0, "ZeroAmount");
 
-        if (isClaimable()) revert NotClaimable();
-
-        if (tokenIn == 0) revert ZeroAmount();
-
-        // AMM: ap dung TOTAL_FEE vao tokenIn hieu dung de tinh gross USD ra
-
-        uint256 tokenNet    = tokenIn * (10000 - TOTAL_FEE_BPS) / 10000;
+        uint256 tokenLpFee  = tokenIn * LP_FEE_BPS / 10000;
+        uint256 tokenNet    = tokenIn - tokenLpFee;
 
         uint256 usdGross    = usdReserve * tokenNet / (tokenReserve + tokenNet);
-
-        // 0.2% gross -> feeRecipient; 0.3% gross o lai reserve (LP fee)
-
         uint256 platformFee = usdGross * PLATFORM_FEE_BPS / 10000;
+        uint256 usdOut      = usdGross - platformFee;
 
-        usdOut = usdGross - platformFee;
-
-        if (usdOut < minUSDOut) revert SlippageExceeded();
-
-        if (usdGross >= usdReserve) revert InsufficientLiquidity();
-
-        IERC20Pool(token).transferFrom(msg.sender, address(this), tokenIn);
+        require(usdOut >= minUsdOut, "SlippageExceeded");
+        require(usdOut > 0, "InsufficientReserve");
 
         tokenReserve += tokenIn;
+        usdReserve   -= usdGross;
+        lastSwapTime  = block.timestamp;
 
-        // LP fee tu nhien o lai: chi tru phan user nhan, khong tru platform fee
+        IERC20(token).transferFrom(msg.sender, address(this), tokenIn);
+        IERC20(usdToken).transfer(feeRecipient, platformFee);
+        IERC20(usdToken).transfer(msg.sender, usdOut);
 
-        usdReserve   -= usdOut;
-
-        if (platformFee > 0) IERC20Pool(usdToken).transfer(feeRecipient, platformFee);
-
-        IERC20Pool(usdToken).transfer(msg.sender, usdOut);
-
-        if (usdGross >= MIN_SWAP_RESET) lastSwapTime = block.timestamp;
-
-        emit Swap(msg.sender, false, tokenIn, usdOut);
-
+        emit TokenSold(msg.sender, tokenIn, usdOut);
     }
 
 
@@ -428,7 +401,7 @@ contract LiquidityPool {
 
     function getBuyQuote(uint256 usdIn) external view returns (uint256 tokenOut) {
 
-        uint256 usdNet = usdIn * (10000 - TOTAL_FEE_BPS) / 10000;
+        uint256 usdNet = usdIn * (10000 - PLATFORM_FEE_BPS - LP_FEE_BPS) / 10000;
 
         tokenOut = tokenReserve * usdNet / (usdReserve + usdNet);
 
@@ -438,11 +411,10 @@ contract LiquidityPool {
 
     function getSellQuote(uint256 tokenIn) external view returns (uint256 usdOut) {
 
-        uint256 tokenNet = tokenIn * (10000 - TOTAL_FEE_BPS) / 10000;
+        uint256 tokenNet = tokenIn * (10000 - LP_FEE_BPS) / 10000;
 
         uint256 usdGross = usdReserve * tokenNet / (tokenReserve + tokenNet);
 
-        // Tru platform fee 0.2% de khop voi sellToken()
 
         usdOut = usdGross * (10000 - PLATFORM_FEE_BPS) / 10000;
 
