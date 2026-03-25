@@ -1,7 +1,7 @@
 import { usePublicClient } from "wagmi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FACTORY_ADDRESS, FACTORY_ABI, SALE_ABI, ERC20_ABI } from "../config/contracts";
+import { FACTORY_ADDRESS, FACTORY_ABI, SALE_ABI, ERC20_ABI, POOL_ABI } from "../config/contracts";
 import { Rocket, TrendingUp, Zap, Flame, Star } from "lucide-react";
 
 interface TokenInfo {
@@ -17,9 +17,11 @@ interface TokenInfo {
   phase: number;
   phase1Sold: bigint;
   usdReserve: bigint;
+  poolUsdReserve: bigint;
 }
 
 const GRADUATION_TARGET = 69_000_000_000n;
+const PHASE1 = 100_000_000n * 10n**18n;
 
 const fmtPrice = (p: bigint) => {
   const n = Number(p) / 1e6;
@@ -32,7 +34,6 @@ const fmtMcap = (m: bigint) => {
   return n >= 1_000_000 ? "$" + (n/1_000_000).toFixed(2) + "M" : n >= 1000 ? "$" + (n/1000).toFixed(1) + "k" : "$" + n.toFixed(2);
 };
 const short = (a: string) => a.slice(0,6) + "..." + a.slice(-4);
-const PHASE1 = 100_000_000n * 10n**18n;
 
 function GradProgress({ usdReserve }: { usdReserve: bigint }) {
   const pct = Math.min(100, Number(usdReserve * 100n / GRADUATION_TARGET));
@@ -44,7 +45,7 @@ function GradProgress({ usdReserve }: { usdReserve: bigint }) {
         <span style={{ fontSize: "11px", color, fontWeight: 700 }}>{pct.toFixed(1)}%</span>
       </div>
       <div style={{ height: "4px", background: "var(--border)", borderRadius: "2px", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: pct + "%", background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: "2px", transition: "width 0.3s" }} />
+        <div style={{ height: "100%", width: pct + "%", background: \`linear-gradient(90deg, \${color}, \${color}88)\`, borderRadius: "2px", transition: "width 0.3s" }} />
       </div>
     </div>
   );
@@ -54,7 +55,7 @@ function TokenCard({ token, onClick, highlight }: { token: TokenInfo; onClick: (
   const progress = token.phase === 1 ? Math.min(100, Number(token.phase1Sold * 100n / PHASE1)) : 100;
   return (
     <div onClick={onClick}
-      style={{ backgroundColor: "var(--bg-card)", border: `1px solid ${highlight ? "#ef444466" : "var(--border)"}`, borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative" }}
+      style={{ backgroundColor: "var(--bg-card)", border: \`1px solid \${highlight ? "#ef444466" : "var(--border)"}\`, borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative" }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = highlight ? "#ef4444" : "var(--accent)")}
       onMouseLeave={e => (e.currentTarget.style.borderColor = highlight ? "#ef444466" : "var(--border)")}>
       {highlight && (
@@ -99,9 +100,7 @@ function TokenCard({ token, onClick, highlight }: { token: TokenInfo; onClick: (
           </div>
         </div>
       )}
-      {token.phase === 2 && (
-        <GradProgress usdReserve={token.usdReserve} />
-      )}
+      {token.phase === 2 && <GradProgress usdReserve={token.usdReserve} />}
     </div>
   );
 }
@@ -125,39 +124,47 @@ export default function FeedPage() {
     if (tokenCache.length > 0 && now - cacheTime < CACHE_TTL) return;
     setLoading(tokenCache.length === 0);
     try {
-      const addrs = await pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "getAllTokens" }) as `0x${string}`[];
+      const addrs = await pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "getAllTokens" }) as \`0x\${string}\`[];
       if (addrs.length === 0) { setLoading(false); return; }
 
+      // Batch 1a: saleAddrs
       const saleCalls = addrs.map(a => ({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "tokenToSale", args: [a] } as const));
       let saleResults: any[];
-      try {
-        saleResults = await pub.multicall({ contracts: saleCalls, allowFailure: false });
-      } catch {
-        saleResults = await Promise.all(saleCalls.map(c => pub.readContract(c).catch(() => null)));
-      }
-      const saleAddrs = saleResults as `0x${string}`[];
+      try { saleResults = await pub.multicall({ contracts: saleCalls, allowFailure: false }); }
+      catch { saleResults = await Promise.all(saleCalls.map(c => pub.readContract(c).catch(() => null))); }
+      const saleAddrs = saleResults as \`0x\${string}\`[];
 
+      // Batch 1b: poolAddrs
+      const poolCalls = addrs.map(a => ({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "tokenToPool", args: [a] } as const));
+      let poolResults: any[];
+      try { poolResults = await pub.multicall({ contracts: poolCalls, allowFailure: true }); }
+      catch { poolResults = addrs.map(() => ({ status: "failure", result: null })); }
+      const poolAddrs = poolResults.map((r: any) => r?.status === "success" ? r.result : null) as (\`0x\${string}\` | null)[];
+
+      // Batch 2: token + sale + pool data (11 calls per token)
+      const ZERO = "0x0000000000000000000000000000000000000000" as \`0x\${string}\`;
       const calls: any[] = [];
       addrs.forEach((a, i) => {
         const sa = saleAddrs[i];
+        const pa = (poolAddrs[i] && poolAddrs[i] !== ZERO) ? poolAddrs[i] as \`0x\${string}\` : sa;
         calls.push(
-          { address: a,  abi: ERC20_ABI,  functionName: "name" },
-          { address: a,  abi: ERC20_ABI,  functionName: "symbol" },
-          { address: a,  abi: ERC20_ABI,  functionName: "imageURI" },
-          { address: a,  abi: ERC20_ABI,  functionName: "description" },
-          { address: a,  abi: ERC20_ABI,  functionName: "creator" },
-          { address: sa, abi: SALE_ABI,   functionName: "getCurrentPrice" },
-          { address: sa, abi: SALE_ABI,   functionName: "getMarketCap" },
-          { address: sa, abi: SALE_ABI,   functionName: "currentPhase" },
-          { address: sa, abi: SALE_ABI,   functionName: "phase1Sold" },
-          { address: sa, abi: SALE_ABI,   functionName: "usdReserve" },
+          { address: a,  abi: ERC20_ABI, functionName: "name" },
+          { address: a,  abi: ERC20_ABI, functionName: "symbol" },
+          { address: a,  abi: ERC20_ABI, functionName: "imageURI" },
+          { address: a,  abi: ERC20_ABI, functionName: "description" },
+          { address: a,  abi: ERC20_ABI, functionName: "creator" },
+          { address: sa, abi: SALE_ABI,  functionName: "getCurrentPrice" },
+          { address: sa, abi: SALE_ABI,  functionName: "getMarketCap" },
+          { address: sa, abi: SALE_ABI,  functionName: "currentPhase" },
+          { address: sa, abi: SALE_ABI,  functionName: "phase1Sold" },
+          { address: sa, abi: SALE_ABI,  functionName: "usdReserve" },
+          { address: pa, abi: POOL_ABI,  functionName: "usdReserve" },
         );
       });
 
       let results: any[];
-      try {
-        results = await pub.multicall({ contracts: calls, allowFailure: true });
-      } catch {
+      try { results = await pub.multicall({ contracts: calls, allowFailure: true }); }
+      catch {
         results = [];
         for (let i = 0; i < calls.length; i++) {
           try { results.push({ status: "success", result: await pub.readContract(calls[i]) }); }
@@ -168,23 +175,27 @@ export default function FeedPage() {
 
       const list: TokenInfo[] = [];
       addrs.forEach((addr, i) => {
-        const base = i * 10;
+        const base = i * 11;
         const get = (j: number) => results[base + j]?.status === "success" ? results[base + j].result : null;
         const name = get(0) as string;
         const symbol = get(1) as string;
         if (!name || !symbol) return;
+        const phase = (get(7) as number) ?? 1;
+        const poolUsdReserve = (get(10) as bigint) ?? 0n;
+        // Hide Phase 3 tokens where pool has been fully recovered
+        if (phase === 3 && poolUsdReserve === 0n) return;
         list.push({
-          address: addr,
-          name, symbol,
-          imageURI:    (get(2) as string) ?? "",
-          description: (get(3) as string) ?? "",
-          creator:     (get(4) as string) ?? "",
-          saleAddress: saleAddrs[i],
-          price:       (get(5) as bigint) ?? 0n,
-          marketCap:   (get(6) as bigint) ?? 0n,
-          phase:       (get(7) as number) ?? 1,
-          phase1Sold:  (get(8) as bigint) ?? 0n,
-          usdReserve:  (get(9) as bigint) ?? 0n,
+          address: addr, name, symbol,
+          imageURI:       (get(2) as string) ?? "",
+          description:    (get(3) as string) ?? "",
+          creator:        (get(4) as string) ?? "",
+          saleAddress:    saleAddrs[i],
+          price:          (get(5) as bigint) ?? 0n,
+          marketCap:      (get(6) as bigint) ?? 0n,
+          phase,
+          phase1Sold:     (get(8) as bigint) ?? 0n,
+          usdReserve:     (get(9) as bigint) ?? 0n,
+          poolUsdReserve,
         });
       });
 
@@ -201,11 +212,9 @@ export default function FeedPage() {
     t.symbol.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Graduating Soon: Phase 2, usdReserve >= 80% of target
   const GRAD_THRESHOLD = GRADUATION_TARGET * 80n / 100n;
   const graduatingSoon = filtered.filter(t => t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD);
   const rest = filtered.filter(t => !(t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD));
-  // New listings: 3 most recent tokens not in graduatingSoon
   const newListings = rest.slice(0, 3);
   const remaining = rest.slice(3);
 
@@ -222,10 +231,8 @@ export default function FeedPage() {
           <Zap size={14} /> Refresh
         </button>
       </div>
-
       <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tokens..."
         style={{ width: "100%", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 16px", color: "var(--text-primary)", fontSize: "14px", marginBottom: "24px", outline: "none" }} />
-
       {loading ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-secondary)" }}>
           <Rocket size={40} style={{ margin: "0 auto 16px", opacity: 0.4 }} />
