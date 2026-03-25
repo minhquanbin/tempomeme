@@ -2,7 +2,7 @@ import { usePublicClient } from "wagmi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FACTORY_ADDRESS, FACTORY_ABI, SALE_ABI, ERC20_ABI } from "../config/contracts";
-import { Rocket, TrendingUp, Clock, Zap } from "lucide-react";
+import { Rocket, TrendingUp, Zap } from "lucide-react";
 
 interface TokenInfo {
   address: string;
