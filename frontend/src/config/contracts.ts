@@ -78,9 +78,10 @@ export const ERC20_ABI = [
 export const fmtPrice = (raw: bigint): string => {
   const usdPerToken = Number(raw) / 1e6;
   if (usdPerToken === 0) return "$0.00";
-  if (usdPerToken < 0.000001) return "$" + usdPerToken.toFixed(10).replace(/\.?0+$/, "");
-  if (usdPerToken < 0.001) return "$" + usdPerToken.toFixed(8).replace(/\.?0+$/, "");
+  if (usdPerToken < 0.0001) return "$" + usdPerToken.toFixed(8).replace(/\.?0+$/, "");
   if (usdPerToken < 1) return "$" + usdPerToken.toFixed(6).replace(/\.?0+$/, "");
+  return "$" + usdPerToken.toFixed(2);
+};
   return "$" + usdPerToken.toFixed(2);
 };
 

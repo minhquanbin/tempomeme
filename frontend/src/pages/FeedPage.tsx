@@ -77,7 +77,7 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => { loadTokens(); }, []);
+  useEffect(() => { if (pub) loadTokens(); }, [pub]);
 
   async function loadTokens() {
     if (!pub) return;
