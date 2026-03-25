@@ -240,15 +240,15 @@ export default function TokenPage() {
             />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                <h1 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text-primary)" }}>{info.name}</h1>
-                <span style={{ fontSize: "12px", color: "var(--accent)", background: "#14532d33", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>{info.symbol}</span>
+                <h1 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "400px" }}>{info.name}</h1>
+                <span style={{ fontSize: "12px", color: "var(--accent)", background: "#14532d33", padding: "2px 8px", borderRadius: "4px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "120px", display: "inline-block", verticalAlign: "middle" }}>{info.symbol}</span>
                 {info.phase === 3 ? (
                   <span style={{ fontSize: "11px", color: "#a855f7", background: "#a855f722", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>Graduated</span>
                 ) : (
                   <span style={{ fontSize: "11px", color: info.phase === 1 ? "#f59e0b" : "#22c55e", background: info.phase === 1 ? "#f59e0b22" : "#22c55e22", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>Phase {info.phase}</span>
                 )}
               </div>
-              <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginTop: "4px" }}>{info.description}</p>
+              <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginTop: "4px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{info.description}</p>
               <p style={{ color: "var(--text-secondary)", fontSize: "12px", marginTop: "6px" }}>
                 Creator: <a href={"https://explore.moderato.tempo.xyz/address/" + info.creator} target="_blank" style={{ color: "var(--accent)", textDecoration: "none" }}>{short(info.creator)}</a>
               </p>
