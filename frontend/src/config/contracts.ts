@@ -1,5 +1,6 @@
-export { tempoModerato } from "../lib/wagmi";
+import { defineChain } from "viem";
 
+export { tempoModerato } from "../lib/wagmi";
 
 export const FACTORY_ADDRESS = "0x1478E73C61A0dBD2C8DC45C542137b5cC2E9D142" as const;
 export const PATH_USD = "0x20c0000000000000000000000000000000000000" as const;
@@ -80,8 +81,6 @@ export const fmtPrice = (raw: bigint): string => {
   if (usdPerToken === 0) return "$0.00";
   if (usdPerToken < 0.0001) return "$" + usdPerToken.toFixed(8).replace(/\.?0+$/, "");
   if (usdPerToken < 1) return "$" + usdPerToken.toFixed(6).replace(/\.?0+$/, "");
-  return "$" + usdPerToken.toFixed(2);
-};
   return "$" + usdPerToken.toFixed(2);
 };
 
