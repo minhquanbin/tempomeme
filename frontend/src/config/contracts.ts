@@ -1,5 +1,3 @@
-import { defineChain } from "viem";
-
 export { tempoModerato } from "../lib/wagmi";
 
 export const FACTORY_ADDRESS = "0x1478E73C61A0dBD2C8DC45C542137b5cC2E9D142" as const;
