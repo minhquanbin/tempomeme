@@ -104,7 +104,7 @@ function TradeCard({ token, onClick }: { token: TokenInfo; onClick: () => void }
         <img src={token.imageURI} alt={token.name} onError={e => { (e.target as HTMLImageElement).src = "https://placehold.co/64x64/1a1a1a/a855f7?text=" + token.symbol[0]; }} style={{ width: "56px", height: "56px", borderRadius: "10px", objectFit: "cover", flexShrink: 0, border: "1px solid var(--border)" }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>{token.name}</span>
+            <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "120px", display: "inline-block", verticalAlign: "middle" }}>{token.name}</span>
             <span style={{ fontSize: "11px", color: "#a855f7", background: "#a855f722", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>{token.symbol}</span>
             <span style={{ fontSize: "10px", color: "#a855f7", background: "#a855f722", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>DEX</span>
           </div>
@@ -293,7 +293,7 @@ export default function FeedPage() {
                   <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#ef4444" }}>Hot</h2>
                   <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— top market cap</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px", alignItems: "stretch" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px", alignItems: "stretch", alignItems: "stretch" }}>
                   {hotTokens.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} highlight />)}
                 </div>
                 <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />
@@ -306,7 +306,7 @@ export default function FeedPage() {
                   <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#f59e0b" }}>New Listings</h2>
                   <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— just launched</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch", alignItems: "stretch" }}>
                   {newListings.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
                 </div>
                 {remaining.length > 0 && <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />}
@@ -318,7 +318,7 @@ export default function FeedPage() {
                   <TrendingUp size={16} color="var(--text-secondary)" />
                   <h2 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-secondary)" }}>All Tokens</h2>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch", alignItems: "stretch" }}>
                   {remaining.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
                 </div>
               </div>
@@ -339,7 +339,7 @@ export default function FeedPage() {
               <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#a855f7" }}>DEX Pools</h2>
               <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— sorted by liquidity</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch", alignItems: "stretch" }}>
               {tradeTokens.map(t => <TradeCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
             </div>
           </div>
