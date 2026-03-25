@@ -43,7 +43,7 @@ export default function Navbar() {
             </div>
           ) : (
             <button onClick={() => connect({ connector: injected() })} style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--accent)", color: "var(--accent)", padding: "7px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
-              Káº¿t ná»‘i vÃ­ / Connect
+            Connect Wallet
             </button>
           )}
         </div>
