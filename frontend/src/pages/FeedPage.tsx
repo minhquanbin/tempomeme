@@ -19,7 +19,7 @@ interface TokenInfo {
 }
 
 function TokenCard({ token, onClick }: { token: TokenInfo; onClick: () => void }) {
-  const fmtPrice = (p: bigint) => { const n = Number(p) / 1e18; return n < 0.000001 ? n.toExponential(2) : n.toFixed(8); };
+const fmtPrice = (p: bigint) => { const n = Number(p) / 1e6; if (n === 0) return "$0.00"; if (n < 0.0001) return "$" + n.toFixed(8).replace(/\.?0+$/, ""); return "$" + n.toFixed(6).replace(/\.?0+$/, ""); };
   const fmtMcap  = (m: bigint) => { const n = Number(m) / 1e6; return n >= 1000 ? "$" + (n/1000).toFixed(1) + "k" : "$" + n.toFixed(2); };
   const short = (a: string) => a.slice(0,6) + "..." + a.slice(-4);
   const PHASE1 = 100_000_000n * 10n**18n;
