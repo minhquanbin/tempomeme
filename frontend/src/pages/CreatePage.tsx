@@ -184,6 +184,7 @@ export default function CreatePage() {
             <p style={{ marginTop: "4px" }}>Phase 1: 10% supply at <strong>$0.00001/token</strong> — 80% cheaper than Phase 2 start price</p>
             <p style={{ marginTop: "4px" }}>Phase 2: AMM bonding curve, starts at <strong>~$0.0000315/token</strong> — price increases as more tokens are bought</p>
             <p style={{ marginTop: "4px", color: "var(--accent)" }}>🚀 Token address will end with ...cf</p>
+          </div>
         </div>
         {!isConnected ? (
           <button onClick={() => connect({ connector: injected() })} style={{ width: "100%", background: "var(--accent)", color: "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "15px" }}>Connect Wallet to continue</button>
