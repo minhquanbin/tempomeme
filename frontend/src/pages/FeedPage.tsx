@@ -188,7 +188,7 @@ export default function FeedPage() {
         });
       });
 
-      const sorted = list.sort((a, b) => (b.marketCap > a.marketCap ? 1 : b.marketCap < a.marketCap ? -1 : 0));
+      const sorted = list.reverse();
       tokenCache = sorted;
       cacheTime = Date.now();
       setTokens(sorted);
@@ -205,7 +205,7 @@ export default function FeedPage() {
   const graduatingSoon = filtered.filter(t => t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD);
   const rest = filtered.filter(t => !(t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD));
   const newListings = rest.slice(0, 3);
-  const remaining = rest.slice(3);
+  const remaining = rest.slice(3).sort((a, b) => (b.marketCap > a.marketCap ? 1 : b.marketCap < a.marketCap ? -1 : 0));
 
   return (
     <div style={{ paddingTop: "32px", paddingBottom: "48px" }}>
