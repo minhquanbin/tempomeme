@@ -238,9 +238,9 @@ export default function FeedPage() {
   const launchTokens = filtered.filter(t => t.phase !== 3);
   const tradeTokens  = filtered.filter(t => t.phase === 3).sort((a, b) => (b.poolUsdReserve > a.poolUsdReserve ? 1 : -1));
 
-  const GRAD_THRESHOLD = GRADUATION_TARGET * 80n / 100n;
-  const graduatingSoon = launchTokens.filter(t => t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD);
-  const rest = launchTokens.filter(t => !(t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD));
+  const hotTokens = [...launchTokens].sort((a, b) => (b.marketCap > a.marketCap ? 1 : b.marketCap < a.marketCap ? -1 : 0)).slice(0, 3);
+  const hotAddrs = new Set(hotTokens.map(t => t.address));
+  const rest = launchTokens.filter(t => !hotAddrs.has(t.address));
   const newListings = rest.slice(0, 3);
   const remaining = rest.slice(3).sort((a, b) => (b.marketCap > a.marketCap ? 1 : b.marketCap < a.marketCap ? -1 : 0));
 
@@ -286,15 +286,15 @@ export default function FeedPage() {
           </div>
         ) : (
           <>
-            {graduatingSoon.length > 0 && (
+            {hotTokens.length > 0 && (
               <div style={{ marginBottom: "32px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                   <Flame size={18} color="#ef4444" />
-                  <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#ef4444" }}>Graduating Soon</h2>
-                  <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— 80%+ to DEX pool</span>
+                  <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#ef4444" }}>Hot</h2>
+                  <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— top market cap</span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
-                  {graduatingSoon.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} highlight />)}
+                  {hotTokens.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} highlight />)}
                 </div>
                 <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />
               </div>
