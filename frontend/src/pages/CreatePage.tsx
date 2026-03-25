@@ -43,7 +43,6 @@ export default function CreatePage() {
   const [preview, setPreview] = useState("");
   const [mineProgress, setMineProgress] = useState(0);
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const handleImageURL = (url: string) => { set("imageURI", url); setPreview(url); };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (file: File) => {
