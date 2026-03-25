@@ -52,8 +52,6 @@ function GradProgress({ usdReserve }: { usdReserve: bigint }) {
 
 function TokenCard({ token, onClick, highlight }: { token: TokenInfo; onClick: () => void; highlight?: boolean }) {
   const progress = token.phase === 1 ? Math.min(100, Number(token.phase1Sold * 100n / PHASE1)) : 100;
-  const gradPct = Number(token.usdReserve * 100n / GRADUATION_TARGET);
-
   return (
     <div onClick={onClick}
       style={{ backgroundColor: "var(--bg-card)", border: `1px solid ${highlight ? "#ef444466" : "var(--border)"}`, borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative" }}
