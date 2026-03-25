@@ -47,7 +47,7 @@ function LaunchCard({ token, onClick, highlight }: { token: TokenInfo; onClick: 
   const bN = "var(--border)", bHL = "#ef444466", bHLH = "#ef4444", bH = "var(--accent)";
   return (
     <div onClick={onClick}
-      style={{ backgroundColor: "var(--bg-card)", border: "1px solid " + (highlight ? bHL : bN), borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative" }}
+      style={{ backgroundColor: "var(--bg-card)", border: "1px solid " + (highlight ? bHL : bN), borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative", height: "100%", boxSizing: "border-box" }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = highlight ? bHLH : bH)}
       onMouseLeave={e => (e.currentTarget.style.borderColor = highlight ? bHL : bN)}>
       {highlight && (
@@ -59,8 +59,8 @@ function LaunchCard({ token, onClick, highlight }: { token: TokenInfo; onClick: 
         <img src={token.imageURI} alt={token.name} onError={e => { (e.target as HTMLImageElement).src = "https://placehold.co/64x64/1a1a1a/22c55e?text=" + token.symbol[0]; }} style={{ width: "56px", height: "56px", borderRadius: "10px", objectFit: "cover", flexShrink: 0, border: "1px solid var(--border)" }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>{token.name}</span>
-            <span style={{ fontSize: "11px", color: "var(--accent)", background: "#14532d33", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>{token.symbol}</span>
+            <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "120px", display: "inline-block", verticalAlign: "middle" }}>{token.name}</span>
+            <span style={{ fontSize: "11px", color: "var(--accent)", background: "#14532d33", padding: "1px 6px", borderRadius: "4px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "80px", display: "inline-block", verticalAlign: "middle" }}>{token.symbol}</span>
             <span style={{ fontSize: "10px", color: token.phase === 1 ? "#f59e0b" : "#22c55e", background: token.phase === 1 ? "#f59e0b22" : "#22c55e22", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>Phase {token.phase}</span>
           </div>
           <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{token.description || "No description"}</p>
@@ -293,7 +293,7 @@ export default function FeedPage() {
                   <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#ef4444" }}>Hot</h2>
                   <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— top market cap</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px", alignItems: "stretch" }}>
                   {hotTokens.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} highlight />)}
                 </div>
                 <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />
@@ -306,7 +306,7 @@ export default function FeedPage() {
                   <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#f59e0b" }}>New Listings</h2>
                   <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— just launched</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch" }}>
                   {newListings.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
                 </div>
                 {remaining.length > 0 && <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />}
@@ -318,7 +318,7 @@ export default function FeedPage() {
                   <TrendingUp size={16} color="var(--text-secondary)" />
                   <h2 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-secondary)" }}>All Tokens</h2>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch" }}>
                   {remaining.map(t => <LaunchCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
                 </div>
               </div>
@@ -339,7 +339,7 @@ export default function FeedPage() {
               <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#a855f7" }}>DEX Pools</h2>
               <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— sorted by liquidity</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", alignItems: "stretch" }}>
               {tradeTokens.map(t => <TradeCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
             </div>
           </div>
