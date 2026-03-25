@@ -5,19 +5,10 @@ import { FACTORY_ADDRESS, FACTORY_ABI, SALE_ABI, ERC20_ABI, POOL_ABI } from "../
 import { Rocket, TrendingUp, Zap, Flame, Star } from "lucide-react";
 
 interface TokenInfo {
-  address: string;
-  name: string;
-  symbol: string;
-  imageURI: string;
-  description: string;
-  creator: string;
-  saleAddress: string;
-  price: bigint;
-  marketCap: bigint;
-  phase: number;
-  phase1Sold: bigint;
-  usdReserve: bigint;
-  poolUsdReserve: bigint;
+  address: string; name: string; symbol: string; imageURI: string;
+  description: string; creator: string; saleAddress: string;
+  price: bigint; marketCap: bigint; phase: number; phase1Sold: bigint;
+  usdReserve: bigint; poolUsdReserve: bigint;
 }
 
 const GRADUATION_TARGET = 69_000_000_000n;
@@ -45,7 +36,7 @@ function GradProgress({ usdReserve }: { usdReserve: bigint }) {
         <span style={{ fontSize: "11px", color, fontWeight: 700 }}>{pct.toFixed(1)}%</span>
       </div>
       <div style={{ height: "4px", background: "var(--border)", borderRadius: "2px", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: pct + "%", background: \`linear-gradient(90deg, \${color}, \${color}88)\`, borderRadius: "2px", transition: "width 0.3s" }} />
+        <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg," + color + "," + color + "88)", borderRadius: "2px", transition: "width 0.3s" }} />
       </div>
     </div>
   );
@@ -53,11 +44,15 @@ function GradProgress({ usdReserve }: { usdReserve: bigint }) {
 
 function TokenCard({ token, onClick, highlight }: { token: TokenInfo; onClick: () => void; highlight?: boolean }) {
   const progress = token.phase === 1 ? Math.min(100, Number(token.phase1Sold * 100n / PHASE1)) : 100;
+  const borderNormal = "var(--border)";
+  const borderHL = "#ef444466";
+  const borderHLHover = "#ef4444";
+  const borderHover = "var(--accent)";
   return (
     <div onClick={onClick}
-      style={{ backgroundColor: "var(--bg-card)", border: \`1px solid \${highlight ? "#ef444466" : "var(--border)"}\`, borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative" }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = highlight ? "#ef4444" : "var(--accent)")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = highlight ? "#ef444466" : "var(--border)")}>
+      style={{ backgroundColor: "var(--bg-card)", border: "1px solid " + (highlight ? borderHL : borderNormal), borderRadius: "12px", padding: "16px", cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "12px", position: "relative" }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = highlight ? borderHLHover : borderHover)}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = highlight ? borderHL : borderNormal)}>
       {highlight && (
         <div style={{ position: "absolute", top: "-10px", left: "12px", background: "linear-gradient(90deg, #ef4444, #f59e0b)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
           <Flame size={10} /> GRADUATING SOON
@@ -71,9 +66,7 @@ function TokenCard({ token, onClick, highlight }: { token: TokenInfo; onClick: (
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>{token.name}</span>
             <span style={{ fontSize: "11px", color: "var(--accent)", background: "#14532d33", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>{token.symbol}</span>
-            <span style={{ fontSize: "10px", color: token.phase === 1 ? "#f59e0b" : token.phase === 2 ? "#22c55e" : "#a855f7", background: token.phase === 1 ? "#f59e0b22" : token.phase === 2 ? "#22c55e22" : "#a855f722", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>
-              Phase {token.phase}
-            </span>
+            <span style={{ fontSize: "10px", color: token.phase === 1 ? "#f59e0b" : token.phase === 2 ? "#22c55e" : "#a855f7", background: token.phase === 1 ? "#f59e0b22" : token.phase === 2 ? "#22c55e22" : "#a855f722", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>Phase {token.phase}</span>
           </div>
           <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{token.description || "No description"}</p>
           <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>by {short(token.creator)}</p>
@@ -124,41 +117,38 @@ export default function FeedPage() {
     if (tokenCache.length > 0 && now - cacheTime < CACHE_TTL) return;
     setLoading(tokenCache.length === 0);
     try {
-      const addrs = await pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "getAllTokens" }) as \`0x\${string}\`[];
+      const addrs = await pub.readContract({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "getAllTokens" }) as `0x${string}`[];
       if (addrs.length === 0) { setLoading(false); return; }
 
-      // Batch 1a: saleAddrs
       const saleCalls = addrs.map(a => ({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "tokenToSale", args: [a] } as const));
       let saleResults: any[];
       try { saleResults = await pub.multicall({ contracts: saleCalls, allowFailure: false }); }
       catch { saleResults = await Promise.all(saleCalls.map(c => pub.readContract(c).catch(() => null))); }
-      const saleAddrs = saleResults as \`0x\${string}\`[];
+      const saleAddrs = saleResults as `0x${string}`[];
 
-      // Batch 1b: poolAddrs
       const poolCalls = addrs.map(a => ({ address: FACTORY_ADDRESS, abi: FACTORY_ABI, functionName: "tokenToPool", args: [a] } as const));
       let poolResults: any[];
       try { poolResults = await pub.multicall({ contracts: poolCalls, allowFailure: true }); }
       catch { poolResults = addrs.map(() => ({ status: "failure", result: null })); }
-      const poolAddrs = poolResults.map((r: any) => r?.status === "success" ? r.result : null) as (\`0x\${string}\` | null)[];
+      const poolAddrs = poolResults.map((r: any) => r?.status === "success" ? r.result : null) as (`0x${string}` | null)[];
 
-      // Batch 2: token + sale + pool data (11 calls per token)
-      const ZERO = "0x0000000000000000000000000000000000000000" as \`0x\${string}\`;
+      const ZERO = "0x0000000000000000000000000000000000000000" as `0x${string}`;
       const calls: any[] = [];
-      addrs.forEach((a, i) => {
+      addrs.forEach((addr, i) => {
         const sa = saleAddrs[i];
-        const pa = (poolAddrs[i] && poolAddrs[i] !== ZERO) ? poolAddrs[i] as \`0x\${string}\` : sa;
+        const pa = (poolAddrs[i] && poolAddrs[i] !== ZERO) ? poolAddrs[i] as `0x${string}` : sa;
         calls.push(
-          { address: a,  abi: ERC20_ABI, functionName: "name" },
-          { address: a,  abi: ERC20_ABI, functionName: "symbol" },
-          { address: a,  abi: ERC20_ABI, functionName: "imageURI" },
-          { address: a,  abi: ERC20_ABI, functionName: "description" },
-          { address: a,  abi: ERC20_ABI, functionName: "creator" },
-          { address: sa, abi: SALE_ABI,  functionName: "getCurrentPrice" },
-          { address: sa, abi: SALE_ABI,  functionName: "getMarketCap" },
-          { address: sa, abi: SALE_ABI,  functionName: "currentPhase" },
-          { address: sa, abi: SALE_ABI,  functionName: "phase1Sold" },
-          { address: sa, abi: SALE_ABI,  functionName: "usdReserve" },
-          { address: pa, abi: POOL_ABI,  functionName: "usdReserve" },
+          { address: addr, abi: ERC20_ABI, functionName: "name" },
+          { address: addr, abi: ERC20_ABI, functionName: "symbol" },
+          { address: addr, abi: ERC20_ABI, functionName: "imageURI" },
+          { address: addr, abi: ERC20_ABI, functionName: "description" },
+          { address: addr, abi: ERC20_ABI, functionName: "creator" },
+          { address: sa,   abi: SALE_ABI,  functionName: "getCurrentPrice" },
+          { address: sa,   abi: SALE_ABI,  functionName: "getMarketCap" },
+          { address: sa,   abi: SALE_ABI,  functionName: "currentPhase" },
+          { address: sa,   abi: SALE_ABI,  functionName: "phase1Sold" },
+          { address: sa,   abi: SALE_ABI,  functionName: "usdReserve" },
+          { address: pa,   abi: POOL_ABI,  functionName: "usdReserve" },
         );
       });
 
@@ -182,19 +172,18 @@ export default function FeedPage() {
         if (!name || !symbol) return;
         const phase = (get(7) as number) ?? 1;
         const poolUsdReserve = (get(10) as bigint) ?? 0n;
-        // Hide Phase 3 tokens where pool has been fully recovered
         if (phase === 3 && poolUsdReserve === 0n) return;
         list.push({
           address: addr, name, symbol,
-          imageURI:       (get(2) as string) ?? "",
-          description:    (get(3) as string) ?? "",
-          creator:        (get(4) as string) ?? "",
-          saleAddress:    saleAddrs[i],
-          price:          (get(5) as bigint) ?? 0n,
-          marketCap:      (get(6) as bigint) ?? 0n,
+          imageURI:      (get(2) as string) ?? "",
+          description:   (get(3) as string) ?? "",
+          creator:       (get(4) as string) ?? "",
+          saleAddress:   saleAddrs[i],
+          price:         (get(5) as bigint) ?? 0n,
+          marketCap:     (get(6) as bigint) ?? 0n,
           phase,
-          phase1Sold:     (get(8) as bigint) ?? 0n,
-          usdReserve:     (get(9) as bigint) ?? 0n,
+          phase1Sold:    (get(8) as bigint) ?? 0n,
+          usdReserve:    (get(9) as bigint) ?? 0n,
           poolUsdReserve,
         });
       });
