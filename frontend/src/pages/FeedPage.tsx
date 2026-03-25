@@ -2,7 +2,7 @@ import { usePublicClient } from "wagmi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FACTORY_ADDRESS, FACTORY_ABI, SALE_ABI, ERC20_ABI } from "../config/contracts";
-import { Rocket, TrendingUp, Zap, Flame } from "lucide-react";
+import { Rocket, TrendingUp, Zap, Flame, Star } from "lucide-react";
 
 interface TokenInfo {
   address: string;
@@ -205,6 +205,9 @@ export default function FeedPage() {
   const GRAD_THRESHOLD = GRADUATION_TARGET * 80n / 100n;
   const graduatingSoon = filtered.filter(t => t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD);
   const rest = filtered.filter(t => !(t.phase === 2 && t.usdReserve >= GRAD_THRESHOLD));
+  // New listings: 3 most recent tokens not in graduatingSoon
+  const newListings = rest.slice(0, 3);
+  const remaining = rest.slice(3);
 
   return (
     <div style={{ paddingTop: "32px", paddingBottom: "48px" }}>
@@ -250,9 +253,30 @@ export default function FeedPage() {
               <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-            {rest.map(t => <TokenCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
-          </div>
+          {newListings.length > 0 && (
+            <div style={{ marginBottom: "32px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                <Star size={16} color="#f59e0b" fill="#f59e0b" />
+                <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#f59e0b" }}>New Listings</h2>
+                <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>— just launched</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+                {newListings.map(t => <TokenCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
+              </div>
+              {remaining.length > 0 && <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />}
+            </div>
+          )}
+          {remaining.length > 0 && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                <TrendingUp size={16} color="var(--text-secondary)" />
+                <h2 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-secondary)" }}>All Tokens</h2>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+                {remaining.map(t => <TokenCard key={t.address} token={t} onClick={() => navigate("/token/" + t.address)} />)}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
