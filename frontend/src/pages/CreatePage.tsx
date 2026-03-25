@@ -148,13 +148,6 @@ export default function CreatePage() {
             >
               {form.imageURI ? "✓ Image ready" : "📁 Upload from device"}
             </button>
-            <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "6px" }}>Or paste a URL:</p>
-            <input
-              style={{ ...inputStyle, marginTop: "4px", fontSize: "12px", padding: "8px 12px" }}
-              placeholder="https://i.imgur.com/..."
-              value={form.imageURI}
-              onChange={e => handleImageURL(e.target.value)}
-            />
           </div>
         </div>
         <div>
@@ -181,16 +174,16 @@ export default function CreatePage() {
         </div>
         {mineProgress > 0 && (
           <div style={{ background: "var(--bg-secondary)", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "var(--text-secondary)" }}>
-            ÃƒÂ¢Ã¢â‚¬ÂºÃ‚ÂÃƒÂ¯Ã‚Â¸Ã‚Â Mining vanity address ...cf ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â {mineProgress.toLocaleString()} iterations
+            ⏳ Mining vanity address ...cf — {mineProgress.toLocaleString()} iterations
           </div>
         )}
         <div style={{ background: "#14532d22", border: "1px solid #22c55e33", borderRadius: "10px", padding: "12px 16px", display: "flex", gap: "10px" }}>
           <AlertCircle size={16} color="var(--accent)" style={{ flexShrink: 0, marginTop: "1px" }} />
           <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: "1.6" }}>
-            <p><strong style={{ color: "var(--accent)" }}>Tokenomics:</strong> Total supply 1,000,000,000 — Phase 1: 10% at $0.00001 — Phase 2: AMM bonding curve — 1% fee</p>
-            <p style={{ marginTop: "4px" }}>Phase 1 fills at $1,000 raised — Phase 2 price increases along the AMM curve</p>
-            <p style={{ marginTop: "4px", color: "var(--accent)" }}>🚀 Token address will end with ...8888</p>
-          </div>
+            <p><strong style={{ color: "var(--accent)" }}>Tokenomics:</strong></p>
+            <p style={{ marginTop: "4px" }}>Phase 1: 10% supply at <strong>$0.00001/token</strong> — 80% cheaper than Phase 2 start price</p>
+            <p style={{ marginTop: "4px" }}>Phase 2: AMM bonding curve, starts at <strong>~$0.0000315/token</strong> — price increases as more tokens are bought</p>
+            <p style={{ marginTop: "4px", color: "var(--accent)" }}>🚀 Token address will end with ...cf</p>
         </div>
         {!isConnected ? (
           <button onClick={() => connect({ connector: injected() })} style={{ width: "100%", background: "var(--accent)", color: "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "15px" }}>Connect Wallet to continue</button>
