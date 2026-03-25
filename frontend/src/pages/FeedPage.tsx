@@ -188,7 +188,7 @@ export default function FeedPage() {
         });
       });
 
-      const sorted = list.reverse();
+      const sorted = list.sort((a, b) => (b.marketCap > a.marketCap ? 1 : b.marketCap < a.marketCap ? -1 : 0));
       tokenCache = sorted;
       cacheTime = Date.now();
       setTokens(sorted);
