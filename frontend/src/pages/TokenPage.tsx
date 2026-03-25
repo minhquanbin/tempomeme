@@ -349,12 +349,12 @@ export default function TokenPage() {
 
       </div>
 
-      {/* Right column â€” trade panel */}
+      {/* Right column — trade panel */}
       <div style={{ background: "var(--bg-card)", border: info.phase === 3 ? "1px solid #a855f7" : "1px solid var(--border)", borderRadius: "16px", padding: "24px", position: "sticky", top: "80px" }}>
 
         {info.phase === 3 && (
           <div style={{ textAlign: "center", marginBottom: "12px", fontSize: "12px", color: "#a855f7", fontWeight: 600 }}>
-            {info.isClaimable ? "REDEEM OPEN â€” Burn tokens for USD" : "DEX Pool â€” Permanent Liquidity"}
+            {info.isClaimable ? "REDEEM OPEN — Burn tokens for USD" : "DEX Pool — Permanent Liquidity"}
           </div>
         )}
 
@@ -472,7 +472,7 @@ export default function TokenPage() {
         )}
 
         <p style={{ textAlign: "center", fontSize: "11px", color: "var(--text-secondary)", marginTop: "10px" }}>
-          {tab === "redeem" ? "Linear redemption â€” burn tokens, receive USD proportionally" : info.phase === 3 ? "DEX fee: 0.2% platform + 0.3% pool" : "1% trading fee"}
+          {tab === "redeem" ? "Linear redemption — burn tokens, receive USD proportionally" : info.phase === 3 ? "DEX fee: 0.2% platform + 0.3% pool" : "1% trading fee"}
         </p>
 
       </div>

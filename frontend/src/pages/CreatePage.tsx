@@ -74,7 +74,7 @@ export default function CreatePage() {
     }
     setLoading(true);
     setMineProgress(0);
-    const toastId = toast.loading("Mining vanity address ...cf");
+    const toastId = toast.loading("Mining vanity address...");
     try {
       // Buoc 1: Predict TokenSale address (la contract dau factory deploy, nonce hien tai)
       const factoryNonce = await pub.getTransactionCount({ address: FACTORY_ADDRESS });
@@ -85,7 +85,7 @@ export default function CreatePage() {
         address!, predictedSale,
         (n) => { setMineProgress(n); toast.loading(`Mining... ${n.toLocaleString()} iterations`, { id: toastId }); }
       );
-      toast.loading("Salt found! Dang tao token...", { id: toastId });
+      toast.loading("Salt found! Deploying token...", { id: toastId });
       // Buoc 3: Approve neu co devBuy
       const devBuyRaw = form.devBuy ? BigInt(Math.floor(Number(form.devBuy) * 1e6)) : 0n;
       const devBuyUSD = devBuyRaw > 500_000_000n ? 500_000_000n : devBuyRaw;
@@ -100,7 +100,7 @@ export default function CreatePage() {
         functionName: "createMeme",
         args: [form.name, form.symbol.toUpperCase(), form.imageURI, form.description, devBuyUSD, salt],
       });
-      toast.loading("Dang xac nhan... / Confirming...", { id: toastId });
+      toast.loading("Confirming...", { id: toastId });
       const receipt = await pub.waitForTransactionReceipt({ hash });
       toast.success("Token launched successfully!", { id: toastId });
       const memeLog = receipt.logs.find(l => l.topics.length === 4);
@@ -173,7 +173,7 @@ export default function CreatePage() {
         </div>
         {mineProgress > 0 && (
           <div style={{ background: "var(--bg-secondary)", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "var(--text-secondary)" }}>
-            ⏳ Mining vanity address ...cf — {mineProgress.toLocaleString()} iterations
+            ⏳ Mining vanity address... — {mineProgress.toLocaleString()} iterations
           </div>
         )}
         <div style={{ background: "#14532d22", border: "1px solid #22c55e33", borderRadius: "10px", padding: "12px 16px", display: "flex", gap: "10px" }}>
@@ -189,7 +189,7 @@ export default function CreatePage() {
           <button onClick={() => connect({ connector: injected() })} style={{ width: "100%", background: "var(--accent)", color: "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "15px" }}>Connect Wallet to continue</button>
         ) : (
           <button onClick={handleCreate} disabled={loading} style={{ width: "100%", background: loading ? "var(--border)" : "var(--accent)", color: loading ? "var(--text-secondary)" : "#000", border: "none", padding: "14px", borderRadius: "10px", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: "15px", transition: "all 0.2s" }}>
-            {loading ? "Mining & deploying..." : "Launch Token"}
+            {loading ? "Launching token..." : "Launch Token"}
           </button>
         )}
       </div>
